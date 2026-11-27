@@ -8,7 +8,13 @@
 | lame.min.js (unmodified, lamejs 1.2.1) | https://github.com/zhuker/lamejs, using LAME https://lame.sourceforge.net | LGPL-3.0 (LICENSE-LGPL-3.0.txt, LICENSE-GPL-3.0.txt) |
 | ONNX Runtime Web 1.18.0 (loaded from jsDelivr) | https://github.com/microsoft/onnxruntime | MIT |
 | Pocket TTS model (loaded from Hugging Face) | Kyutai, https://huggingface.co/kyutai/pocket-tts; ONNX export by KevinAHM | CC BY 4.0 |
+| MMS-TTS models for Tagalog, Cebuano, Waray, Hiligaynon (loaded from Hugging Face, filipino.html) | Meta, https://huggingface.co/facebook/mms-tts; ONNX export by willwade, https://huggingface.co/willwade/mms-tts-multilingual-models-onnx | CC BY-NC 4.0 (non-commercial) |
+| mms-worker.js, filipino.html, filipino.js | Original code for this site | MIT (LICENSE) |
 | Preset voices | https://huggingface.co/kyutai/tts-voices | CC0 or CC BY 4.0 (alba-mackenna, VCTK, voice-donations, Voice-Zero) |
+
+## Non-commercial models
+Speech made on filipino.html uses CC BY-NC 4.0 models and may not be used commercially
+(ads, monetized videos, paid products).
 
 ## Acceptable use
 No cloning or impersonation without explicit, lawful consent. Do not present generated

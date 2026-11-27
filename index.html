@@ -3,7 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Free text to speech with voice cloning that runs in your browser. Download as MP3 or WAV.">
+<meta name="theme-color" content="#0c0d16">
 <title>Open Voice TTS</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23d92d43'/%3E%3Cg fill='%23fff'%3E%3Crect x='7' y='13' width='3' height='6' rx='1.5'/%3E%3Crect x='12' y='10' width='3' height='12' rx='1.5'/%3E%3Crect x='17' y='7' width='3' height='18' rx='1.5'/%3E%3Crect x='22' y='11' width='3' height='10' rx='1.5'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,17 +14,19 @@
   <header>
     <span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
     <span class="name">Open Voice <b>TTS</b></span>
+    <a class="nav" href="filipino.html">Tagalog · Bisaya · Waray →</a>
   </header>
 
   <div class="hero">
     <div class="pitch">
       <p class="kicker">Text to speech with voice cloning</p>
       <h1>Type your words. <span>Hear them spoken.</span></h1>
-      <p class="lead">Pick a preset voice or clone one with permission, then download the speech as an MP3. It is generated on your own device.</p>
+      <p class="lead">Pick a preset voice or clone one with permission, then download the speech as MP3 or WAV. It is generated on your own device, so your text never leaves it.</p>
       <div class="loader">
         <button id="load" class="primary">Load voice model</button>
-        <p id="status" role="status">Model not loaded.</p>
-        <p class="hint">The first load downloads large model files, so use Wi-Fi.</p>
+        <p id="status" role="status" aria-live="polite">Model not loaded.</p>
+        <progress id="progress" max="1" value="0" aria-label="Progress" hidden></progress>
+        <p class="hint">The first load downloads large model files, so use Wi-Fi. Later visits load from your browser's storage.</p>
       </div>
     </div>
 
@@ -32,31 +37,37 @@
           <label for="voice">Voice</label>
           <select id="voice" disabled><option>Load the model first</option></select>
           <label for="text">Your text (English)</label>
-          <textarea id="text" maxlength="5000">Hello! This voice was generated right here in my web browser.</textarea>
+          <textarea id="text" maxlength="5000" spellcheck="true">Hello! This voice was generated right here in my web browser.</textarea>
           <div class="actions">
             <span id="count" class="hint"></span>
+            <label class="toggle"><input type="checkbox" id="live" checked> Play while generating</label>
             <button id="stop" disabled>Stop</button>
-            <button id="generate" class="primary" disabled>Generate speech</button>
+            <button id="generate" class="primary" disabled title="Ctrl + Enter">Generate speech</button>
           </div>
         </div>
       </section>
 
       <section class="card clone-card">
-        <details>
+        <details id="clone-panel">
           <summary>Clone a voice</summary>
-          <p class="hint">Use a clear 5–10 second recording of one person with little background noise. Only the first 10 seconds are used. The recording stays on your device and is forgotten when you close the page.</p>
+          <p class="hint">Use a clear 5 to 10 second recording of one person with little background noise. Silence at the start and end is trimmed, and the level is raised automatically. The recording stays on your device and is forgotten when you close the page.</p>
           <label class="check"><input type="checkbox" id="consent"> <span>This is my own voice, or I have the speaker's explicit permission to clone it for this use.</span></label>
           <div class="clone">
             <button id="record" disabled>Record</button>
             <label class="button file"><input type="file" id="upload" accept="audio/*" disabled><span>Upload audio</span></label>
           </div>
+          <button id="forget" class="link" hidden>Forget my cloned voice</button>
         </details>
       </section>
 
       <section id="result" class="card result" aria-label="Your audio" hidden>
-        <div id="wave" class="wave" aria-hidden="true"></div>
+        <div id="wave" class="wave" title="Click to jump to a point"></div>
         <audio id="player" controls></audio>
-        <a id="download" class="button primary" download="speech.mp3">Download MP3</a>
+        <p id="meta" class="meta"></p>
+        <div class="downloads">
+          <a id="download-mp3" class="button primary" aria-disabled="true">Preparing MP3…</a>
+          <a id="download-wav" class="button">Download WAV</a>
+        </div>
       </section>
     </div>
   </div>
@@ -64,13 +75,13 @@
   <dl class="facts">
     <div><dt>10 s</dt><dd>Voice sample used for cloning</dd></div>
     <div><dt>5,000</dt><dd>Characters per run</dd></div>
-    <div><dt>MP3</dt><dd>Download format</dd></div>
+    <div><dt>MP3 · WAV</dt><dd>Download formats</dd></div>
     <div><dt>0</dt><dd>Accounts needed</dd></div>
   </dl>
 
   <footer>
     <p>Do not clone anyone without their explicit, lawful consent, present generated speech as a real recording, or use it to deceive, harass or defraud.</p>
-    <p>Model: <a href="https://huggingface.co/kyutai/pocket-tts">Pocket TTS</a> by Kyutai (CC BY 4.0). <a href="NOTICE.txt">Credits and licenses</a>.</p>
+    <p>Model: <a href="https://huggingface.co/kyutai/pocket-tts">Pocket TTS</a> by Kyutai (CC BY 4.0). <a href="NOTICE.txt">Credits and licenses</a>. <button id="clear-cache" class="link" hidden>Remove downloaded model files</button></p>
   </footer>
 </main>
 <script src="lame.min.js"></script>

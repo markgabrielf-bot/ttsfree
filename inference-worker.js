@@ -1,6 +1,8 @@
 // Pocket TTS ONNX Web Worker
 // From pocket-voice by Hemanth.HM (MIT), building on KevinAHM's Pocket TTS ONNX web code (Apache-2.0).
 // Modified: English only; Stop now waits for generation to exit and reports "generation_done".
+// Modified (2026): download progress, model files cached in Cache Storage, per-part
+// generation progress, and a "clear_voice" message that forgets the cloned voice.
 // See NOTICE.txt.
 console.log("Pocket TTS Worker Starting...");
 
@@ -69,6 +71,110 @@ let predefinedVoiceRecords = {};
 let customVoiceEmbedding = null;
 let currentVoiceName = null;
 let voiceConditioningCache = new Map();
+
+// Model files are kept in Cache Storage so a second visit does not download them again.
+// The cache name includes a hash of bundle.json, so an upstream model update starts a fresh cache.
+const CACHE_PREFIX = "open-voice-tts-";
+let modelCacheName = null;
+const downloads = new Map();
+let lastDownloadReport = 0;
+
+function hashText(text) {
+    let h = 2166136261;
+    for (let i = 0; i < text.length; i++) {
+        h ^= text.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+    }
+    return (h >>> 0).toString(36);
+}
+
+function canUseCache() {
+    // iOS/Safari keep the original low-memory path: ONNX Runtime fetches the URL itself.
+    return typeof caches !== "undefined" && modelCacheName && !(checkIsIOS() || checkIsSafari());
+}
+
+function reportDownloads(label, force = false) {
+    const now = performance.now();
+    if (!force && now - lastDownloadReport < 150) return;
+    lastDownloadReport = now;
+    let loaded = 0, total = 0, known = true;
+    for (const d of downloads.values()) {
+        loaded += d.loaded;
+        if (d.total) total += Math.max(d.total, d.loaded);
+        else known = false;
+    }
+    postMessage({ type: "download", label, loaded, total: known ? total : 0 });
+}
+
+async function fetchFile(url, label = "model") {
+    let cache = null;
+    if (canUseCache()) {
+        try {
+            cache = await caches.open(modelCacheName);
+            const hit = await cache.match(url);
+            if (hit) {
+                const bytes = new Uint8Array(await hit.arrayBuffer());
+                downloads.set(url, { loaded: bytes.byteLength, total: bytes.byteLength, cached: true });
+                reportDownloads(label, true);
+                return bytes;
+            }
+        } catch (e) {
+            cache = null;
+        }
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Download failed (${response.status}) for ${url.split("/").pop()}`);
+    }
+    const entry = { loaded: 0, total: Number(response.headers.get("content-length")) || 0 };
+    downloads.set(url, entry);
+    reportDownloads(label, true);
+
+    let bytes;
+    if (response.body && response.body.getReader) {
+        const reader = response.body.getReader();
+        const parts = [];
+        for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            parts.push(value);
+            entry.loaded += value.byteLength;
+            reportDownloads(label);
+        }
+        bytes = new Uint8Array(entry.loaded);
+        let at = 0;
+        for (const part of parts) { bytes.set(part, at); at += part.byteLength; }
+    } else {
+        bytes = new Uint8Array(await response.arrayBuffer());
+        entry.loaded = bytes.byteLength;
+    }
+    entry.total = entry.loaded;
+    reportDownloads(label, true);
+
+    if (cache) {
+        try {
+            await cache.put(url, new Response(bytes, { headers: { "content-type": "application/octet-stream" } }));
+        } catch (e) {
+            console.warn("Could not cache model file (storage may be full):", e);
+        }
+    }
+    return bytes;
+}
+
+async function createSession(url, options, label = "model") {
+    if (checkIsIOS() || checkIsSafari()) {
+        return ort.InferenceSession.create(url, options);
+    }
+    let bytes;
+    try {
+        bytes = await fetchFile(url, label);
+    } catch (e) {
+        console.warn("Download with progress failed, letting ONNX Runtime fetch it:", e);
+        return ort.InferenceSession.create(url, options);
+    }
+    return ort.InferenceSession.create(bytes, options);
+}
 
 let stTensors = [];
 let isGenerating = false;
@@ -435,9 +541,11 @@ async function ensureEncoderSessionLoaded() {
         sessionOptions.enableMemPattern = false;
         sessionOptions.graphOptimizationLevel = "disabled";
     }
-    mimiEncoderSession = await ort.InferenceSession.create(
+    downloads.clear();
+    mimiEncoderSession = await createSession(
         bundlePath(currentLanguage, MODEL_STEMS.mimi_encoder),
-        sessionOptions
+        sessionOptions,
+        "encoder"
     );
     postMessage({ type: "status", status: "Voice encoder ready", state: "idle" });
 }
@@ -653,7 +761,16 @@ async function loadBundle(language, { initialLoad = false } = {}) {
     if (!metadataResponse.ok) {
         throw new Error(`Failed to load bundle metadata for ${language}`);
     }
-    bundleMetadata = await metadataResponse.json();
+    const metadataText = await metadataResponse.text();
+    bundleMetadata = JSON.parse(metadataText);
+    modelCacheName = `${CACHE_PREFIX}${language}-${hashText(metadataText)}`;
+    downloads.clear();
+    if (typeof caches !== "undefined") {
+        // Remove caches left by older model versions.
+        caches.keys().then((keys) => keys
+            .filter((k) => k.startsWith(CACHE_PREFIX) && k !== modelCacheName)
+            .forEach((k) => caches.delete(k))).catch(() => {});
+    }
 
     currentSampleRate = Number(bundleMetadata.sample_rate);
     currentSamplesPerFrame = Number(bundleMetadata.samples_per_frame);
@@ -722,10 +839,10 @@ async function loadBundle(language, { initialLoad = false } = {}) {
     } else {
         try {
             const results = await Promise.all([
-                ort.InferenceSession.create(bundlePath(language, MODEL_STEMS.text_conditioner), sessionOptions),
-                ort.InferenceSession.create(bundlePath(language, MODEL_STEMS.flow_lm_main), sessionOptions),
-                ort.InferenceSession.create(bundlePath(language, MODEL_STEMS.flow_lm_flow), sessionOptions),
-                ort.InferenceSession.create(bundlePath(language, MODEL_STEMS.mimi_decoder), sessionOptions),
+                createSession(bundlePath(language, MODEL_STEMS.text_conditioner), sessionOptions),
+                createSession(bundlePath(language, MODEL_STEMS.flow_lm_main), sessionOptions),
+                createSession(bundlePath(language, MODEL_STEMS.flow_lm_flow), sessionOptions),
+                createSession(bundlePath(language, MODEL_STEMS.mimi_decoder), sessionOptions),
             ]);
             textCondRes = results[0];
             flowMainRes = results[1];
@@ -741,11 +858,13 @@ async function loadBundle(language, { initialLoad = false } = {}) {
     flowLmFlowSession = flowFlowRes;
     mimiDecoderSession = decoderRes;
 
-    const tokenizerResponse = await fetch(bundlePath(language, bundleMetadata.tokenizer_file));
-    if (!tokenizerResponse.ok) {
+    postMessage({ type: "status", status: "Loading tokenizer...", state: "loading" });
+    let tokenizerBuffer;
+    try {
+        tokenizerBuffer = (await fetchFile(bundlePath(language, bundleMetadata.tokenizer_file))).buffer;
+    } catch (e) {
         throw new Error(`Failed to load tokenizer for ${language}`);
     }
-    const tokenizerBuffer = await tokenizerResponse.arrayBuffer();
     ensureSentencepieceLoaded();
     tokenizerProcessor = new self.SentencePieceProcessor();
     await tokenizerProcessor.loadFromArrayBuffer(tokenizerBuffer);
@@ -759,9 +878,10 @@ async function loadBundle(language, { initialLoad = false } = {}) {
     }
 
     predefinedVoiceRecords = {};
-    const voicesResponse = await fetch(bundlePath(language, "voices.bin"));
-    if (voicesResponse.ok) {
-        predefinedVoiceRecords = parseVoiceStatesBin(await voicesResponse.arrayBuffer());
+    try {
+        predefinedVoiceRecords = parseVoiceStatesBin((await fetchFile(bundlePath(language, "voices.bin"))).buffer);
+    } catch (e) {
+        console.warn("Could not load voices.bin:", e);
     }
 
     voiceConditioningCache = new Map();
@@ -841,6 +961,14 @@ self.onmessage = async (e) => {
             await ensureCustomVoiceCached({ force: true, statusText: "Preparing custom voice..." });
             postMessage({ type: "voice_encoded", voiceName: "custom" });
             postMessage({ type: "status", status: "Ready", state: "idle" });
+            return;
+        }
+
+        if (type === "clear_voice") {
+            customVoiceEmbedding = null;
+            voiceConditioningCache.delete("custom");
+            if (currentVoiceName === "custom") currentVoiceName = null;
+            postMessage({ type: "voice_cleared" });
             return;
         }
 
@@ -936,6 +1064,7 @@ async function runGenerationPipeline(voiceName, chunks, framesAfterEos) {
             mimiState = initStateFromManifest(bundleMetadata.mimi_state_manifest);
         }
 
+        postMessage({ type: "progress", part: chunkIdx + 1, parts: chunks.length });
         const chunkText = chunks[chunkIdx];
         let isFirstAudioChunkOfTextChunk = true;
         const tokenIds = tokenizerProcessor.encodeIds(chunkText);

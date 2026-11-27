@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fil">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Free text to speech in Tagalog, Bisaya (Cebuano), Waray and Hiligaynon that runs in your browser. Non-commercial use.">
+<meta name="theme-color" content="#0c0d16">
+<title>Open Voice TTS · Tagalog, Bisaya, Waray, Hiligaynon</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23d92d43'/%3E%3Cg fill='%23fff'%3E%3Crect x='7' y='13' width='3' height='6' rx='1.5'/%3E%3Crect x='12' y='10' width='3' height='12' rx='1.5'/%3E%3Crect x='17' y='7' width='3' height='18' rx='1.5'/%3E%3Crect x='22' y='11' width='3' height='10' rx='1.5'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header>
+    <span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+    <span class="name">Open Voice <b>TTS</b></span>
+    <a class="nav" href="index.html">English + voice cloning →</a>
+  </header>
+
+  <div class="hero">
+    <div class="pitch">
+      <p class="kicker">Philippine languages · beta</p>
+      <h1>Isulat mo. <span>Pakinggan mo.</span></h1>
+      <p class="lead">Text to speech in Tagalog, Bisaya (Cebuano), Waray and Hiligaynon, made on your own device. Each language uses one standard voice; voice cloning is not available here.</p>
+      <p class="notice"><b>Non-commercial use only.</b> These models are licensed CC BY-NC 4.0. Use them for personal projects, learning, and free public information, not for ads, monetized videos or paid products.</p>
+      <div class="loader">
+        <button id="load" class="primary">Load Tagalog voice</button>
+        <p id="status" role="status" aria-live="polite">Voice not loaded.</p>
+        <progress id="progress" max="1" value="0" aria-label="Progress" hidden></progress>
+        <p class="hint">Each language is a separate download of about 115 MB, so use Wi-Fi. Later visits load from your browser's storage.</p>
+      </div>
+    </div>
+
+    <div class="stack">
+      <section class="window" aria-label="Speech generator">
+        <div class="bar" aria-hidden="true"><i></i><i></i><i></i><span>Speech generator</span></div>
+        <div class="content">
+          <div class="row">
+            <div>
+              <label for="lang">Language</label>
+              <select id="lang">
+                <option value="tgl">Tagalog</option>
+                <option value="ceb">Bisaya (Cebuano)</option>
+                <option value="war">Waray</option>
+                <option value="hil">Hiligaynon (Ilonggo)</option>
+              </select>
+            </div>
+            <div>
+              <label for="speed">Speed <output id="speed-value">1.0×</output></label>
+              <input type="range" id="speed" min="0.7" max="1.4" step="0.05" value="1">
+            </div>
+          </div>
+          <label for="text">Your text</label>
+          <textarea id="text" maxlength="5000" spellcheck="false"></textarea>
+          <div class="actions">
+            <span id="count" class="hint"></span>
+            <label class="toggle"><input type="checkbox" id="live" checked> Play while generating</label>
+            <button id="stop" disabled>Stop</button>
+            <button id="generate" class="primary" disabled title="Ctrl + Enter">Generate speech</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card clone-card">
+        <details>
+          <summary>Tips for better pronunciation</summary>
+          <ul class="tips">
+            <li>Write words the way they are spoken in the language, with normal spelling. The voice reads letters, so English words may sound off.</li>
+            <li>Write numbers as words, for example "dalawampu" instead of "20".</li>
+            <li>Commas add a short pause and periods a longer one.</li>
+            <li>If a line sounds odd, press Generate again. Each run is slightly different. Lower <b>Variation</b> makes it steadier.</li>
+          </ul>
+          <label for="variation">Variation <output id="variation-value">Normal</output></label>
+          <input type="range" id="variation" min="0.3" max="1.2" step="0.05" value="1">
+        </details>
+      </section>
+
+      <section id="result" class="card result" aria-label="Your audio" hidden>
+        <div id="wave" class="wave" title="Click to jump to a point"></div>
+        <audio id="player" controls></audio>
+        <p id="meta" class="meta"></p>
+        <div class="downloads">
+          <a id="download-mp3" class="button primary" aria-disabled="true">Preparing MP3…</a>
+          <a id="download-wav" class="button">Download WAV</a>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <dl class="facts">
+    <div><dt>4</dt><dd>Philippine languages</dd></div>
+    <div><dt>5,000</dt><dd>Characters per run</dd></div>
+    <div><dt>MP3 · WAV</dt><dd>Download formats</dd></div>
+    <div><dt>NC</dt><dd>Non-commercial license</dd></div>
+  </dl>
+
+  <footer>
+    <p>Do not present generated speech as a real recording, or use it to deceive, harass or defraud.</p>
+    <p>Models: <a href="https://huggingface.co/facebook/mms-tts">Meta MMS-TTS</a> (CC BY-NC 4.0), ONNX export by <a href="https://huggingface.co/willwade/mms-tts-multilingual-models-onnx">willwade</a>. <a href="NOTICE.txt">Credits and licenses</a>. <button id="clear-cache" class="link" hidden>Remove downloaded voices</button></p>
+  </footer>
+</main>
+<script src="lame.min.js"></script>
+<script src="audio.js"></script>
+<script src="filipino.js"></script>
+</body>
+</html>

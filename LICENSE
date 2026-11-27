@@ -1,6 +1,7 @@
 MIT License
 
-Applies to the original code in index.html, style.css, app.js and audio.js.
+Applies to the original code in index.html, style.css, app.js, audio.js,
+filipino.html, filipino.js and mms-worker.js.
 Third-party files have their own licenses; see NOTICE.txt.
 
 Copyright (c) 2026 [Your Name]
