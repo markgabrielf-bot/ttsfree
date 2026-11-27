@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open Voice TTS</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header>
+    <span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+    <span class="name">Open Voice <b>TTS</b></span>
+  </header>
+
+  <div class="hero">
+    <div class="pitch">
+      <p class="kicker">Text to speech with voice cloning</p>
+      <h1>Type your words. <span>Hear them spoken.</span></h1>
+      <p class="lead">Pick a preset voice or clone one with permission, then download the speech as an MP3. It is generated on your own device.</p>
+      <div class="loader">
+        <button id="load" class="primary">Load voice model</button>
+        <p id="status" role="status">Model not loaded.</p>
+        <p class="hint">The first load downloads large model files, so use Wi-Fi.</p>
+      </div>
+    </div>
+
+    <div class="stack">
+      <section class="window" aria-label="Speech generator">
+        <div class="bar" aria-hidden="true"><i></i><i></i><i></i><span>Speech generator</span></div>
+        <div class="content">
+          <label for="voice">Voice</label>
+          <select id="voice" disabled><option>Load the model first</option></select>
+          <label for="text">Your text (English)</label>
+          <textarea id="text" maxlength="5000">Hello! This voice was generated right here in my web browser.</textarea>
+          <div class="actions">
+            <span id="count" class="hint"></span>
+            <button id="stop" disabled>Stop</button>
+            <button id="generate" class="primary" disabled>Generate speech</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card clone-card">
+        <details>
+          <summary>Clone a voice</summary>
+          <p class="hint">Use a clear 5–10 second recording of one person with little background noise. Only the first 10 seconds are used. The recording stays on your device and is forgotten when you close the page.</p>
+          <label class="check"><input type="checkbox" id="consent"> <span>This is my own voice, or I have the speaker's explicit permission to clone it for this use.</span></label>
+          <div class="clone">
+            <button id="record" disabled>Record</button>
+            <label class="button file"><input type="file" id="upload" accept="audio/*" disabled><span>Upload audio</span></label>
+          </div>
+        </details>
+      </section>
+
+      <section id="result" class="card result" aria-label="Your audio" hidden>
+        <div id="wave" class="wave" aria-hidden="true"></div>
+        <audio id="player" controls></audio>
+        <a id="download" class="button primary" download="speech.mp3">Download MP3</a>
+      </section>
+    </div>
+  </div>
+
+  <dl class="facts">
+    <div><dt>10 s</dt><dd>Voice sample used for cloning</dd></div>
+    <div><dt>5,000</dt><dd>Characters per run</dd></div>
+    <div><dt>MP3</dt><dd>Download format</dd></div>
+    <div><dt>0</dt><dd>Accounts needed</dd></div>
+  </dl>
+
+  <footer>
+    <p>Do not clone anyone without their explicit, lawful consent, present generated speech as a real recording, or use it to deceive, harass or defraud.</p>
+    <p>Model: <a href="https://huggingface.co/kyutai/pocket-tts">Pocket TTS</a> by Kyutai (CC BY 4.0). <a href="NOTICE.txt">Credits and licenses</a>.</p>
+  </footer>
+</main>
+<script src="lame.min.js"></script>
+<script src="audio.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
