@@ -1,0 +1,15 @@
+# Credits and licenses
+
+| Part | Source | License |
+|---|---|---|
+| inference-worker.js (modified) | https://github.com/benregan/pocket-voice, MIT (c) Hemanth.HM, as stated in its README | MIT |
+| Web inference pipeline the worker builds on | KevinAHM, https://huggingface.co/KevinAHM/pocket-tts-onnx | Apache-2.0 (LICENSE-Apache-2.0.txt) |
+| sentencepiece.js (as shipped by pocket-voice; browser-patched) | https://github.com/sctg-development/sentencepiece-js | Apache-2.0 |
+| lame.min.js (unmodified, lamejs 1.2.1) | https://github.com/zhuker/lamejs, using LAME https://lame.sourceforge.net | LGPL-3.0 (LICENSE-LGPL-3.0.txt, LICENSE-GPL-3.0.txt) |
+| ONNX Runtime Web 1.18.0 (loaded from jsDelivr) | https://github.com/microsoft/onnxruntime | MIT |
+| Pocket TTS model (loaded from Hugging Face) | Kyutai, https://huggingface.co/kyutai/pocket-tts; ONNX export by KevinAHM | CC BY 4.0 |
+| Preset voices | https://huggingface.co/kyutai/tts-voices | CC0 or CC BY 4.0 (alba-mackenna, VCTK, voice-donations, Voice-Zero) |
+
+## Acceptable use
+No cloning or impersonation without explicit, lawful consent. Do not present generated
+speech as a genuine recording, or use it for deception, fraud or harassment.
